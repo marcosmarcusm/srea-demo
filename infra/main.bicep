@@ -172,7 +172,7 @@ resource errorAlertRule 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     scopes: [
       containerApp.id
     ]
-    evaluationFrequency: 'PT1M'
+    evaluationFrequency: 'PT5M'
     windowSize: 'PT5M'
     criteria: {
       'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
@@ -212,7 +212,7 @@ resource latencyAlertRule 'Microsoft.Insights/scheduledQueryRules@2023-03-15-pre
     scopes: [
       appInsights.id
     ]
-    evaluationFrequency: 'PT1M'
+    evaluationFrequency: 'PT5M'
     windowSize: 'PT5M'
     criteria: {
       allOf: [
