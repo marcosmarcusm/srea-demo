@@ -4,21 +4,21 @@ name: Trigger auto deployment for order-api-demo
 on:
   # Automatically trigger it when detected changes in repo
   push:
-    branches: 
+    branches:
       [ main ]
     paths:
     - '**'
     - '.github/workflows/order-api-demo-AutoDeployTrigger-aa6110d7-f160-4ccd-852d-097e2ca07e91.yml'
 
-  # Allow manual trigger 
-  workflow_dispatch:      
+  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions: 
-      id-token: write #This is required for requesting the OIDC JWT Token
-      contents: read #Required when GH token is used to authenticate with private repo
+    permissions:
+      id-token: write # This is required for requesting the OIDC JWT Token
+      contents: read  # Required when GH token is used to authenticate with private repo
 
     steps:
       - name: Checkout to the branch
@@ -47,3 +47,35 @@ jobs:
             _buildArgumentsValues_
 
 
+      - name: Trigger SRE Agent PostDeployValidator
+        if: success()
+        env:
+          TRIGGER_URL: ${{ secrets.SRE_AGENT_TRIGGER_URL }}
+        run: |
+          if [ -z "$TRIGGER_URL" ]; then
+            echo "::warning::SRE_AGENT_TRIGGER_URL secret not set — skipping post-deploy validation."
+            exit 0
+          fi
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "app": "order-api-demo",
+            "resource_group": "rg-srea-demo",
+            "revision_image": "acrjffjqgwlbwhgc.azurecr.io/order-api-demo:${{ github.sha }}",
+            "commit_sha": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
+            "ref": "${{ github.ref }}",
+            "repository": "${{ github.repository }}",
+            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          )
+
+          echo "Notifying PostDeployValidator with payload:"
+          echo "$PAYLOAD"
+
+          # --fail-with-body so the job fails (loudly) if the agent endpoint rejects the call
+          curl --fail-with-body --silent --show-error \
+            -X POST "$TRIGGER_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
