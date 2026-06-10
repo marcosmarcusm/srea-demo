@@ -2,12 +2,13 @@ name: Trigger auto deployment for order-api-demo
 
 # When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
+  # Automatically trigger only when the sample-app source (or this workflow file)
+  # changes. Edits to docs, infra, scripts, sre-config, etc. won't rebuild the image.
   push:
     branches:
       [ main ]
     paths:
-    - '**'
+    - 'sample-app/**'
     - '.github/workflows/order-api-demo-AutoDeployTrigger-aa6110d7-f160-4ccd-852d-097e2ca07e91.yml'
 
   # Allow manual trigger
