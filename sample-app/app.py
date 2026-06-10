@@ -53,7 +53,7 @@ def index():
 
 @app.route("/health")
 def health():
-    logger.info(f"Health check OK - connected to {DB_CONNECTION_STRING}")
+    logger.info(f"Health check OKYDOKY - connected to {DB_CONNECTION_STRING}")
     return jsonify({"status": "healthy", "db": "connected"})
 
 
