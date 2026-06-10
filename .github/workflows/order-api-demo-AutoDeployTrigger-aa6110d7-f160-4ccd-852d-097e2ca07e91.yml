@@ -58,6 +58,21 @@ jobs:
             exit 0
           fi
 
+          # SRE Agent HTTP triggers require a Bearer token whose audience is the
+          # SRE Agent first-party app (NOT https://management.azure.com).
+          # See: https://learn.microsoft.com/azure/sre-agent/http-triggers#authentication-for-trigger-invocation
+          # The 401 troubleshooting note explicitly calls out this app ID:
+          # https://learn.microsoft.com/azure/sre-agent/http-triggers#401-unauthorized
+          SRE_AGENT_APP_ID="59f0a04a-b322-4310-adc9-39ac41e9631e"
+          ARM_TOKEN=$(az account get-access-token \
+            --resource "$SRE_AGENT_APP_ID" \
+            --query accessToken -o tsv)
+
+          if [ -z "$ARM_TOKEN" ]; then
+            echo "::error::Failed to acquire SRE Agent bearer token. Is azure/login configured?"
+            exit 1
+          fi
+
           PAYLOAD=$(cat <<EOF
           {
             "app": "order-api-demo",
@@ -78,5 +93,6 @@ jobs:
           # --fail-with-body so the job fails (loudly) if the agent endpoint rejects the call
           curl --fail-with-body --silent --show-error \
             -X POST "$TRIGGER_URL" \
+            -H "Authorization: Bearer $ARM_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD"
